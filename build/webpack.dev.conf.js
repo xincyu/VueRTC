@@ -11,8 +11,8 @@ const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 const portfinder = require('portfinder')
 const fs = require('fs')
 
-// const HOST = process.env.HOST
-const HOST = '10.10.0.237'
+const HOST = process.env.HOST
+// const HOST = '10.10.0.237'
 const PORT = process.env.PORT && Number(process.env.PORT)
 
 const devWebpackConfig = merge(baseWebpackConfig, {
@@ -36,10 +36,10 @@ const devWebpackConfig = merge(baseWebpackConfig, {
     host: HOST || config.dev.host,
     port: PORT || config.dev.port,
     // https: true, // only default localhost ssl
-    https: {
-      key: fs.readFileSync('./config/ssl/privkey.key'),
-      cert: fs.readFileSync('./config/ssl/cacert.pem'),
-    },
+    // https: {
+    //   key: fs.readFileSync('./config/ssl/privkey.key'),
+    //   cert: fs.readFileSync('./config/ssl/cacert.pem'),
+    // },
     open: config.dev.autoOpenBrowser,
     overlay: config.dev.errorOverlay
       ? { warnings: false, errors: true }
@@ -96,7 +96,6 @@ module.exports = new Promise((resolve, reject) => {
         ? utils.createNotifierCallback()
         : undefined
       }))
-
       resolve(devWebpackConfig)
     }
   })
