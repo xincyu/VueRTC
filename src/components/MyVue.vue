@@ -60,7 +60,7 @@ export default {
         offerToReceiveAudio: 1 // true
       },
       agreement: location.protocol === 'http:' ? 'ws://' : 'wss://',
-      server: {hostname: '10.10.0.237', wsPort: 8104, host: '10.10.0.237:8104'},
+      server: {hostname: '192.168.31.126', wsPort: 8104, host: '192.168.31.126:8104'},
       wsPort: 8104,
       deviceType: null,
       userInfo: {deviceType: null, online: true},
@@ -80,10 +80,10 @@ export default {
   methods: {
     /** 初始化数据 */
     initData () {
-      // this.deviceType = _isMobile() ? 'mobile' : 'pc'
       this.deviceType = checkDeviceType()
       this.userInfo.deviceType = this.deviceType
       console.log('navigator.userAgent:', _isMobile(), typeof (_isMobile()))
+      // alert(navigator.userAgent)
       this.config = {
         iceServers:
         [ // Information about ICE servers - Use your own!
