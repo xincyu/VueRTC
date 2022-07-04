@@ -22,8 +22,12 @@ function checkDeviceType () {
     device = 'iPad'
   } else if (userDevice.search(RegExp(/iOS/i)) > 0) {
     device = 'iOS'
-  } else {
+  } else if (userDevice.search(RegExp(/Mac/i)) > 0) {
+    device = 'Mac'
+  } else if (userDevice.search(RegExp(/Windows/i)) > 0) {
     device = 'Windows'
+  } else {
+    device = '设备'
   }
   return device
 }
