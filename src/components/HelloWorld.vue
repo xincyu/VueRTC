@@ -35,6 +35,7 @@ export default {
   margin: auto;
   position: relative;
   top: 40%;
+  color: #ffebcd;
 }
 .title-bt-start{
   position: relative;

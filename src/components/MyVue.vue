@@ -2,30 +2,37 @@
   <div class="app-container">
     <div class="join-from">
       <div  class="head-btn">
-        <el-button type="primary"  @click="goBack">首页</el-button>
-        <p  >{{deviceType}} 在线</p>
+        <el-button style="float: left;margin-left: 10px;"   type="text"  @click="goBack"  icon="el-icon-arrow-left">回到首页</el-button>
+        <p  style="margin-right: 10px;">{{deviceType}} 在线</p>
       </div>
+      <p class="head-text" >星连，连接每一刻感动...</p>
       <!-- User Form -->
-      <div  class="user-form">
-        <el-input placeholder="请输入您的通话昵称" v-model="user.userName">
+      <div  class="user-form" >
+        <el-input placeholder="请输入您的通话昵称" v-model="user.userName"  :disabled="login.joinUser">
           <template slot="prepend">昵 称</template>
         </el-input>
-        <el-button type="primary"  @click="startConn">创建并登入</el-button>
+        <el-button  v-show="!login.joinUser" style="margin: 25px;" type="primary"  @click="startConn"
+        :loading="login.creatUserLoad" :disabled="!user.userName" >创建并登入</el-button>
       </div>
       <!-- room form -->
-      <el-form :model="user">
-        <el-form-item label="">
-          <el-input placeholder="您要加入的房间号" v-model="user.roomName">
-            <template slot="prepend">房间号</template>
-          </el-input>
-        </el-form-item>
-        <div>
-          <el-radio v-model="shareMode" label="video" border>视频通话</el-radio>
-          <el-radio v-model="shareMode" label="screen" border>屏幕分享</el-radio>
+      <div class="room-form" v-show="login.showJoinRoom">
+        <el-form :model="user">
+          <el-form-item label="">
+            <el-input placeholder="您要加入的房间号" v-model="user.roomName"  :disabled="login.joinRoom">
+              <template slot="prepend">房间号</template>
+            </el-input>
+          </el-form-item>
+          <div>
+            <el-radio v-model="shareMode" label="video" border>视频通话</el-radio>
+            <el-radio v-model="shareMode" label="screen" border>屏幕分享</el-radio>
+          </div>
+        </el-form>
+        <!-- 功能按键 -->
+        <div  style="margin-top: 20px;">
+          <el-button v-show="!login.joinRoom" type="primary" @click="joinRoom" >加入房间</el-button>
+          <el-button v-show="login.joinRoom" type="danger" @click="hangUp" >挂断并退出</el-button>
         </div>
-      </el-form>
-      <el-button v-show="!login.joinRoom" type="primary" @click="joinRoom" >加入房间</el-button>
-      <el-button v-show="login.joinRoom" type="danger" @click="hangUp" >挂断并退出</el-button>
+      </div>
     </div>
     <!-- video-Container  -->
     <div  class="videoContainer">
@@ -42,7 +49,7 @@
 
 <script>
 // import { QueryPatientByNo } from '@/api/caseManageAPI'
-import { _isMobile, checkDeviceType } from '../utils'
+import { checkDeviceType } from '../utils'
 export default {
   name: 'Myvue',
   data () {
@@ -53,14 +60,14 @@ export default {
         userName: '',
         roomName: ''
       },
-      login: {joinRoom: false},
+      login: {creatUserLoad: false, joinUser: false, joinRoom: false, showJoinRoom: false},
       // 创建视频offer 配置
       offerOptions: {
         offerToReceiveVideo: 1, // true
         offerToReceiveAudio: 1 // true
       },
-      agreement: location.protocol === 'http:' ? 'ws://' : 'wss://',
-      server: {hostname: '192.168.31.126', wsPort: 8104, host: '192.168.31.126:8104'},
+      agreement: location.protocol === 'https:' ? 'wss://' : 'ws://', // 包括 'file:'
+      server: {hostname: '10.10.0.237', wsPort: 8104, host: '10.10.0.237:8104'},
       wsPort: 8104,
       deviceType: null,
       userInfo: {deviceType: null, online: true},
@@ -82,8 +89,7 @@ export default {
     initData () {
       this.deviceType = checkDeviceType()
       this.userInfo.deviceType = this.deviceType
-      console.log('navigator.userAgent:', _isMobile(), typeof (_isMobile()))
-      // alert(navigator.userAgent)
+      // console.log('navigator.userAgent:', _isMobile(), typeof (_isMobile()))
       this.config = {
         iceServers:
         [ // Information about ICE servers - Use your own!
@@ -97,13 +103,14 @@ export default {
     },
     /** 开启连接 */
     startConn () {
+      this.login.creatUserLoad = true
       // var ws = new WebSocket(this.agreement + location.hostname + ':' + this.wsPort) // 【由ExPre启动的web服务，会自动注入 location.host 端口号，前端直接使用即可】
       var ws = new WebSocket(this.agreement + this.server.hostname + ':' + this.server.wsPort) // 【由ExPre启动的web服务，会自动注入 location.host 端口号，前端直接使用即可】
       this.ws = ws // WebSocket 对象实例，方便后续使用
       // ws未连接成功 执行哪个？
       ws.onopen = (evt) => {
-        console.log('connent WebSocket is ok', this.agreement + this.server.hostname + ':' + this.server.wsPort)// 【连接已建立】
-        alert('connent WebSocket is ok', this.agreement + this.server.hostname + ':' + this.server.wsPort)
+        // console.log('connent WebSocket is ok', this.agreement + this.server.hostname + ':' + this.server.wsPort)// 【连接已建立】
+        // alert('connent WebSocket is ok', this.agreement + this.server.hostname + ':' + this.server.wsPort)
         const sendJson = JSON.stringify({
           type: 'conn',
           userName: this.user.userName
@@ -116,11 +123,12 @@ export default {
         switch (json.type) {
           case 'conn':
             console.log('用户登录成功：', json.userName)
-            // userName.disabled = true
-            // startConn.disabled = true
-            // roomName.disabled = false
-            // joinRoom.disabled = false
-            // hangUp.disabled = false
+            setTimeout(() => {
+              this.login.creatUserLoad = false
+              this.login.showJoinRoom = true
+              this.login.joinUser = true
+              this.$message({message: '恭喜你，用户 ' + json.userName + ' 注册成功', type: 'success'})
+            }, 0.6 * 1000)
             break
           case 'room':
             // 返回房间内所有用户
@@ -167,15 +175,6 @@ export default {
           }
         }
       }
-      // 调取屏幕
-      // const displayConstraints = {
-      //   audio: true,
-      //   video: {
-      //     mandatory: {
-      //       chromeMediaSource: 'desktop'
-      //     }
-      //   }
-      // }
       const medias = this.shareMode === 'video'
         ? navigator.mediaDevices.getUserMedia(userConstraints)
         : navigator.mediaDevices.getDisplayMedia(userConstraints)
@@ -365,11 +364,6 @@ export default {
     hangUp () {
       // 禁用按键
       this.login.joinRoom = false
-      // userName.disabled = false
-      // startConn.disabled = false
-      // roomName.disabled = true
-      // joinRoom.disabled = true
-      // hangUp.disabled = true
       // 停止本地流的生成
       if (this.localStream) {
         this.localStream.getTracks().forEach((track) => track.stop())
@@ -381,14 +375,16 @@ export default {
         element.pc = null
       })
       this.pcList.length = 0
-      // 断开ws连接（相当于退出房间了）
-      if (this.ws) {
-        this.ws.close() // ws发送断开信息，ws处理close信息
-        this.ws = null
-      }
+      // 不断开WS即没有真正退出房间，仅挂断了视频流而已。
+      // 断开ws连接（相当于退出ws连接了，需要重新连接）
+      // if (this.ws) {
+      //   this.ws.close() // ws发送断开信息，ws处理close信息
+      //   this.ws = null
+      // }
       // 清除前端所有视频框;
       this.mediaList = [] // 最好赋值空数组，而非长度置0，否则导致渲染延迟问题
-      // videoContainer.innerHTML = ''
+      // 提示
+      this.$message({message: '已挂断', type: 'danger'})
       console.log('hangUp!')
     },
 
@@ -404,6 +400,22 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+.head-btn{
+  display: flex;
+  justify-content: space-between;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+}
+.head-text{
+  font: 2em sans-serif;
+  margin: 0;
+}
+.user-form{
+  margin-top: 20px;
+}
+.room-form{
+  margin-top: 34px;
+}
 
 .videoContainer{
   margin-top: 20px;
